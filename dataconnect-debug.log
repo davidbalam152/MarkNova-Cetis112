@@ -1524,3 +1524,34 @@ E0505 18:37:37.416963     453 watch.go:40] Failed to load config from "/home/use
 E0505 18:37:47.411991     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
 E0505 18:37:57.404978     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
 E0505 18:38:07.413573     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:38:17.412113     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:38:27.403371     453 watch.go:116] watchAllDir unable to walk dir `/home/user/marknova-cetis112/dataconnect`: lstat /home/user/marknova-cetis112/dataconnect: no such file or directory
+E0505 18:38:27.403537     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:38:37.412038     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:38:47.411998     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:38:57.403502     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:39:07.402967     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:39:17.412018     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:39:27.403305     453 watch.go:116] watchAllDir unable to walk dir `/home/user/marknova-cetis112/dataconnect`: lstat /home/user/marknova-cetis112/dataconnect: no such file or directory
+E0505 18:39:27.403506     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:39:37.412607     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:39:47.412726     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:39:57.403250     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:40:07.411992     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:40:17.411997     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:40:27.403157     453 watch.go:116] watchAllDir unable to walk dir `/home/user/marknova-cetis112/dataconnect`: lstat /home/user/marknova-cetis112/dataconnect: no such file or directory
+E0505 18:40:27.403252     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:40:37.412023     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:40:47.411986     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:40:57.403399     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:41:07.404372     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:41:17.402981     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:41:27.403313     453 watch.go:116] watchAllDir unable to walk dir `/home/user/marknova-cetis112/dataconnect`: lstat /home/user/marknova-cetis112/dataconnect: no such file or directory
+E0505 18:41:27.403457     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:41:37.412013     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:41:47.412020     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:41:57.403499     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:42:07.412000     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:42:17.412052     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
+E0505 18:42:27.403137     453 watch.go:116] watchAllDir unable to walk dir `/home/user/marknova-cetis112/dataconnect`: lstat /home/user/marknova-cetis112/dataconnect: no such file or directory
+E0505 18:42:27.403223     453 watch.go:40] Failed to load config from "/home/user/marknova-cetis112/dataconnect": could not find dataconnect.yaml in `/home/user/marknova-cetis112/dataconnect`
