@@ -1,77 +1,121 @@
+
 "use client";
+import { useState, useEffect } from 'react';
+import { db } from '@/firebase/config';
+import { 
+  collection, 
+  query, 
+  where, 
+  onSnapshot, 
+  doc, 
+  updateDoc, 
+  deleteDoc 
+} from 'firebase/firestore';
+import { useUser } from '@/context/UserContext';
 
-import { useUser } from "@/context/UserContext";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import Link from "next/link";
+export default function AdminPanel() {
+  const { role, loading } = useUser();
+  const [activeTab, setActiveTab] = useState<'noticias' | 'negocios'>('noticias');
+  const [pendingNews, setPendingNews] = useState<any[]>([]);
+  const [pendingBusinesses, setPendingBusinesses] = useState<any[]>([]);
 
-export default function AdminPage() {
-  const { user, role, loading } = useUser();
-  const router = useRouter();
-
+  // 1. Escuchar datos pendientes en tiempo real
   useEffect(() => {
-    if (!loading) {
-      if (!user || role !== "admin") {
-        router.push("/");
+    if (role !== 'Admin') return;
+
+    // Escuchar Noticias (Colección 'news')
+    const qNews = query(collection(db, "news"), where("status", "==", "pendiente"));
+    const unsubNews = onSnapshot(qNews, (snapshot) => {
+      setPendingNews(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    // Escuchar Negocios (Colección 'negocios')
+    const qBiz = query(collection(db, "negocios"), where("status", "==", "pendiente"));
+    const unsubBiz = onSnapshot(qBiz, (snapshot) => {
+      setPendingBusinesses(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    return () => { unsubNews(); unsubBiz(); };
+  }, [role]);
+
+  // 2. Función para APROBAR (Cambia status a 'aprobado')
+  const handleApprove = async (collectionName: string, id: string) => {
+    try {
+      const docRef = doc(db, collectionName, id);
+      await updateDoc(docRef, { status: 'aprobado' });
+      alert("Contenido aprobado. Ahora es visible en el sitio.");
+    } catch (error) {
+      console.error("Error al aprobar:", error);
+    }
+  };
+
+  // 3. Función para ELIMINAR (Borra de la base de datos)
+  const handleDelete = async (collectionName: string, id: string) => {
+    if (confirm("¿Estás seguro de eliminar este registro permanentemente?")) {
+      try {
+        await deleteDoc(doc(db, collectionName, id));
+      } catch (error) {
+        console.error("Error al eliminar:", error);
       }
     }
-  }, [user, role, loading, router]);
+  };
 
-  if (loading) {
-    return (
-      <main className="p-12 text-center">
-        <p>Verificando acceso...</p>
-      </main>
-    );
-  }
+  if (loading) return <div className="p-10 text-center">Cargando...</div>;
+  if (role !== 'Admin') return <div className="p-10 text-center text-red-600 font-bold">Acceso Denegado.</div>;
 
-  if (role === "admin") {
-    return (
-      <main className="p-12 max-w-5xl mx-auto">
-        <div className="border-2 border-red-600 bg-red-50 rounded-xl p-8 shadow-sm">
-          <h1 className="text-3xl font-bold text-red-900 text-center mb-8">
-            Panel de Administración
-          </h1>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Sección de Contenido Pendiente */}
-            <div className="border border-red-400 rounded-lg p-6 bg-white shadow-sm">
-              <h2 className="text-xl font-semibold text-red-700 mb-4">
-                Contenido Pendiente
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Aquí aparecerán las noticias y emprendimientos esperando tu aprobación para ser publicados.
-              </p>
-              
-              <Link 
-                href="/admin/nueva-noticia" 
-                className="inline-block w-full text-center bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition mb-6"
-              >
-                Redactar Nueva Noticia
-              </Link>
+  return (
+    <div className="max-w-5xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6 text-gray-800">Panel de Moderación</h1>
+      
+      {/* Pestañas de Navegación */}
+      <div className="flex gap-4 mb-8 border-b">
+        <button 
+          onClick={() => setActiveTab('noticias')}
+          className={`pb-2 px-4 font-bold transition-all ${activeTab === 'noticias' ? 'border-b-4 border-red-600 text-red-600' : 'text-gray-400'}`}
+        >
+          Noticias ({pendingNews.length})
+        </button>
+        <button 
+          onClick={() => setActiveTab('negocios')}
+          className={`pb-2 px-4 font-bold transition-all ${activeTab === 'negocios' ? 'border-b-4 border-red-600 text-red-600' : 'text-gray-400'}`}
+        >
+          Emprendimientos ({pendingBusinesses.length})
+        </button>
+      </div>
 
-              <div className="border-t border-red-100 pt-4">
-                <p className="italic text-gray-400">No hay contenido pendiente por ahora.</p>
+      {/* Contenido Dinámico */}
+      <div className="space-y-4">
+        {activeTab === 'noticias' ? (
+          pendingNews.length === 0 ? <p className="text-gray-500 italic">No hay noticias pendientes.</p> :
+          pendingNews.map(n => (
+            <div key={n.id} className="bg-white p-6 rounded-xl border shadow-sm flex justify-between items-center">
+              <div>
+                <h3 className="font-bold text-xl">{n.title}</h3>
+                <p className="text-gray-600">{n.summary || n.content?.substring(0, 100)}...</p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => handleApprove('news', n.id)} className="bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700">Aprobar</button>
+                <button onClick={() => handleDelete('news', n.id)} className="bg-gray-100 text-red-600 px-4 py-2 rounded-lg font-bold hover:bg-red-50">Eliminar</button>
               </div>
             </div>
-
-            {/* Sección de Gestión de Usuarios */}
-            <div className="border border-red-400 rounded-lg p-6 bg-white shadow-sm">
-              <h2 className="text-xl font-semibold text-red-700 mb-4">
-                Gestión de Usuarios
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Aquí podrás ver y modificar los roles de los usuarios registrados en la plataforma.
-              </p>
-              <div className="border-t border-red-100 pt-4">
-                <p className="italic text-gray-400">La gestión de usuarios se implementará pronto.</p>
+          ))
+        ) : (
+          pendingBusinesses.length === 0 ? <p className="text-gray-500 italic">No hay negocios pendientes.</p> :
+          pendingBusinesses.map(b => (
+            <div key={b.id} className="bg-white p-6 rounded-xl border shadow-sm flex justify-between items-center">
+              <div>
+                <h3 className="font-bold text-xl">{b.nombreNegocio}</h3>
+                <p className="text-gray-600">{b.categoria} — {b.contacto}</p>
+                <p className="text-sm text-gray-500 mt-1">{b.descripcion}</p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => handleApprove('negocios', b.id)} className="bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700">Aprobar</button>
+                <button onClick={() => handleDelete('negocios', b.id)} className="bg-gray-100 text-red-600 px-4 py-2 rounded-lg font-bold hover:bg-red-50">Eliminar</button>
               </div>
             </div>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  return null;
+          ))
+        )}
+      </div>
+    </div>
+  );
 }
