@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { db } from '@/firebase/config';
 import { collection, addDoc } from 'firebase/firestore';
-import { useUser } from '@/context/UserContext'; // Usamos tu contexto de usuario
+import { useUser } from '@/context/UserContext'; 
 import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
@@ -21,7 +21,7 @@ export default function RegisterPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Protección de ruta: Si no es Emprendedor, no ve la página
+  // Protección de ruta: Solo Emprendedor o Admin pueden entrar
   if (loading) return <div className="p-10 text-center">Verificando permisos...</div>;
   
   if (role !== 'Emprendedor' && role !== 'Admin') {
@@ -39,19 +39,18 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     try {
-      // Guardamos en la colección "negocios" (la que lee tu Panel de Admin)
+      // Guardamos en la colección "negocios" con status pendiente
       await addDoc(collection(db, "negocios"), {
         nombreNegocio: formData.businessName,
         descripcion: formData.description,
         categoria: formData.category,
-        contacto: formData.contact,
-        status: 'pendiente', // Se envía como pendiente para moderación
+        contacto: formData.contact, // Aquí se guarda el link o el número
+        status: 'pendiente',
         createdAt: new Date(),
-        // Opcional: podrías guardar el email del dueño si lo tienes en el user context
       });
 
       alert("¡Solicitud enviada con éxito! Queda pendiente de aprobación.");
-      router.push('/catalog'); // Redirigir al catálogo
+      router.push('/catalog'); 
     } catch (error) {
       console.error("Error al registrar:", error);
       alert("Hubo un error al enviar la solicitud.");
@@ -86,7 +85,7 @@ export default function RegisterPage() {
           Registro de Emprendimientos
         </h2>
         <p style={{ fontSize: '16px', color: '#4B5563', textAlign: 'center', marginBottom: '32px' }}>
-          Tu solicitud quedará como "pendiente" hasta que el administrador verifique el pago de $10.
+          Tu solicitud quedará como "pendiente" hasta que el administrador la apruebe.
         </p>
 
         <form onSubmit={handleSubmit} style={{
@@ -133,19 +132,20 @@ export default function RegisterPage() {
               </select>
             </div>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Precio Registro</label>
+              <label style={{ display: 'block', fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Costo</label>
               <input type="text" disabled placeholder="$10 MXN" style={{...inputStyle, backgroundColor: '#f1f1f1'}}/>
             </div>
           </div>
 
           <div style={{ marginBottom: '32px' }}>
-            <label style={{ display: 'block', fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Contacto (WhatsApp / IG)</label>
+            {/* CAMBIO AQUÍ: Etiqueta y Placeholder mejorados */}
+            <label style={{ display: 'block', fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Contacto (WhatsApp o Link de Redes Sociales)</label>
             <input 
               type="text" 
               required
               value={formData.contact}
               onChange={(e) => setFormData({...formData, contact: e.target.value})}
-              placeholder="Ej: @mi_negocio o 9991234567"
+              placeholder="Ej: 529991234567 o https://instagram.com/tu_negocio"
               style={inputStyle}
             />
           </div>
@@ -168,11 +168,10 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        {/* Sección de Soporte */}
         <div style={{ marginTop: '48px', textAlign: 'center', padding: '24px', backgroundColor: '#FFFBEB', borderRadius: '12px', border: '1px solid #FEE2E2' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#B45309', marginBottom: '16px' }}>¿Necesitas ayuda?</h3>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-            <a href="https://wa.me/529992194923" target="_blank" style={{ backgroundColor: '#25D366', color: 'white', borderRadius: '8px', padding: '12px 24px', textDecoration: 'none' }}>WhatsApp</a>
+            <a href="https://wa.me/529992194923" target="_blank" style={{ backgroundColor: '#25D366', color: 'white', borderRadius: '8px', padding: '12px 24px', textDecoration: 'none' }}>WhatsApp Soporte</a>
           </div>
         </div>
       </main>
