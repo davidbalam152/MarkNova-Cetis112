@@ -22,13 +22,35 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setLoading(true);
       if (currentUser) {
+      if (currentUser) {
         setUser(currentUser);
-        const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
-        setRole(docSnap.exists() ? docSnap.data()?.role : null);
-      } else {
-        setUser(null);
-        setRole(null);
+        try {
+          // Buscamos tu documento en la carpeta 'users' usando tu ID único
+          const docRef = doc(db, 'users', currentUser.uid);
+          const docSnap = await getDoc(docRef);
+          
+          if (docSnap.exists()) {
+            // Leemos el rol que pusimos en el Paso 1
+            const rolSucio = docSnap.data()?.role || "";
+            
+            // NORMALIZACIÓN: No importa si escribiste admin, ADMIN o Admin
+            // el código lo va a convertir internamente en 'Admin'
+            if (rolSucio.toLowerCase() === 'admin') {
+              setRole('Admin'); // Este es el que usaremos en toda la app
+            } else if (rolSucio.toLowerCase() === 'emprendedor') {
+              setRole('Emprendedor');
+            } else {
+              setRole('Lector');
+            }
+          } else {
+            setRole('Lector');
+          }
+        } catch (error) {
+          console.error("Error al obtener el rol:", error);
+          setRole(null);
+        }
       }
+}
       setLoading(false);
     });
     return () => unsubscribe();
