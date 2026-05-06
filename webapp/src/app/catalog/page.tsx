@@ -1,192 +1,86 @@
-"use client";
-import Link from 'next/link';
-import { useState, useMemo } from 'react';
 
-// Placeholder data for businesses
-const businesses = [
-  {
-    id: 1,
-    name: 'Negocio de Ejemplo 1',
-    description: 'Esta es una breve descripción del primer negocio. Ofrecemos productos de alta calidad.',
-    image: 'https://via.placeholder.com/300x200',
-    category: 'Comida',
-  },
-  {
-    id: 2,
-    name: 'Negocio de Ejemplo 2',
-    description: 'Servicios profesionales para tus necesidades. Contacta con nosotros para más información.',
-    image: 'https://via.placeholder.com/300x200',
-    category: 'Servicios',
-  },
-  {
-    id: 3,
-    name: 'Negocio de Ejemplo 3',
-    description: 'Artículos únicos y hechos a mano. El regalo perfecto para cualquier ocasión.',
-    image: 'https://via.placeholder.com/300x200',
-    category: 'Artesanía',
-  },
-];
+"use client";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { db } from '@/firebase/config';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { useUser } from "@/context/UserContext"; // Para mostrar el botón de registro
+import Header from "@/components/Header";
 
 export default function CatalogPage() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { role } = useUser();
 
-  const filteredBusinesses = useMemo(() => {
-    return businesses.filter((business) => {
-      const searchTermLower = searchTerm.toLowerCase();
-      const categoryMatch = selectedCategory ? business.category === selectedCategory : true;
-      const searchMatch = business.name.toLowerCase().includes(searchTermLower);
-      return categoryMatch && searchMatch;
+  useEffect(() => {
+    // 1. Consulta a la colección "negocios" filtrando solo por los aprobados
+    const q = query(
+      collection(db, "negocios"), 
+      where("status", "==", "aprobado")
+    );
+
+    // 2. Escuchar cambios en tiempo real
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setBusinesses(docs);
+      setLoading(false);
     });
-  }, [searchTerm, selectedCategory]);
+
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) return <p className="p-10 text-center text-red-800 font-bold">Cargando catálogo...</p>;
 
   return (
-    <div style={{
-      fontFamily: "\'Inter\', \'Roboto\', sans-serif",
-      backgroundColor: '#F4F6F8',
-      color: '#1F2937',
-      minHeight: '100vh',
-    }}>
-      <header style={{
-        padding: '16px 24px',
-        backgroundColor: '#991B1B',
-        color: 'white',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <Link href="/" passHref>
-          <h1 style={{
-            fontSize: '28px',
-            fontWeight: '700',
-            color: 'white',
-            cursor: 'pointer'
-          }}>MarkNova</h1>
-        </Link>
-      </header>
+    <main>
+      <Header />
+      <div className="p-6 max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-8 border-b-2 border-red-800 pb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">Catálogo de Emprendedores</h1>
+            <p className="text-gray-600">Apoya el talento local de nuestra comunidad.</p>
+          </div>
 
-      <main style={{
-        padding: '48px 24px',
-        maxWidth: '768px',
-        margin: '0 auto',
-      }}>
-        <h2 style={{
-          fontSize: '22px',
-          fontWeight: '700',
-          color: '#111827',
-          marginBottom: '24px',
-          textAlign: 'center'
-        }}>
-          Catálogo de Negocios
-        </h2>
-
-        {/* Search and Filters */}
-        <div style={{
-          display: 'flex',
-          gap: '16px',
-          marginBottom: '32px'
-        }}>
-          <input
-            type="text"
-            placeholder="Buscar por nombre..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              flexGrow: 1,
-              backgroundColor: 'white',
-              borderColor: '#E5E7EB',
-              borderWidth: '1px',
-              borderRadius: '4px',
-              padding: '16px',
-              color: '#1F2937',
-            }}
-          />
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            style={{
-              backgroundColor: 'white',
-              borderColor: '#E5E7EB',
-              borderWidth: '1px',
-              borderRadius: '4px',
-              padding: '16px',
-              color: '#1F2937',
-            }}>
-            <option value="">Categoría</option>
-            <option value="Comida">Comida</option>
-            <option value="Servicios">Servicios</option>
-            <option value="Artesanía">Artesanía</option>
-          </select>
+          {/* BOTÓN SOLO PARA EMPRENDEDORES: Aquí es donde inician su registro */}
+          {role === 'Emprendedor' && (
+            <Link 
+              href="/register" 
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition shadow-lg"
+            >
+              + Registrar mi Negocio ($10)
+            </Link>
+          )}
         </div>
 
-        {/* Business Listings */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr',
-          gap: '24px'
-        }}>
-          {filteredBusinesses.map((business) => (
-            <div key={business.id} style={{
-              backgroundColor: 'white',
-              borderRadius: '12px',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-              overflow: 'hidden'
-            }}>
-              <img src={business.image} alt={business.name} style={{
-                width: '100%',
-                height: '150px',
-                objectFit: 'cover'
-              }}/>
-              <div style={{ padding: '16px' }}>
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  color: '#111827',
-                  marginBottom: '8px'
-                }}>
-                  {business.name}
-                </h3>
-                <p style={{
-                  fontSize: '14px',
-                  color: '#4B5563',
-                  marginBottom: '16px'
-                }}>
-                  {business.description}
-                </p>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'flex-end',
-                  alignItems: 'center'
-                }}>
-                  <div>
-                    <button style={{
-                      backgroundColor: 'transparent',
-                      color: '#DC2626',
-                      border: '1px solid #DC2626',
-                      borderRadius: '8px',
-                      padding: '8px 16px',
-                      marginRight: '8px',
-                      cursor: 'pointer'
-                    }}>
-                      Ver más
-                    </button>
-                    <a href="https://wa.me/529992194923" target="_blank" rel="noopener noreferrer" style={{
-                      backgroundColor: '#25D366',
-                      color: 'white',
-                      borderRadius: '8px',
-                      padding: '8px 16px',
-                      textDecoration: 'none'
-                    }}>
-                      WhatsApp
-                    </a>
-                  </div>
+        {businesses.length === 0 ? (
+          <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed">
+            <p className="text-gray-500 italic text-lg">Aún no hay emprendimientos aprobados.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {businesses.map((biz) => (
+              <div key={biz.id} className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 flex flex-col hover:shadow-xl transition">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-2xl font-bold text-red-800">{biz.nombreNegocio}</h3>
+                  <span className="bg-red-100 text-red-800 text-xs font-bold px-3 py-1 rounded-full uppercase">
+                    {biz.categoria}
+                  </span>
+                </div>
+                
+                <p className="text-gray-600 mb-6 flex-grow">{biz.descripcion}</p>
+                
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Contacto Directo</p>
+                  <p className="text-lg font-semibold text-blue-700">{biz.contacto}</p>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </main>
-    </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
