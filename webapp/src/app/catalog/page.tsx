@@ -11,6 +11,10 @@ export default function CatalogPage() {
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { role } = useUser();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [filteredBusinesses, setFilteredBusinesses] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
     const q = query(
@@ -24,11 +28,32 @@ export default function CatalogPage() {
         ...doc.data()
       }));
       setBusinesses(docs);
+      
+      const uniqueCategories = [...new Set(docs.map(doc => doc.categoria))].filter(Boolean);
+      setCategories(['all', ...uniqueCategories]);
+      
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    let filtered = businesses;
+
+    if (searchTerm) {
+      filtered = filtered.filter(biz =>
+        biz.nombreNegocio.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        biz.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(biz => biz.categoria === selectedCategory);
+    }
+
+    setFilteredBusinesses(filtered);
+  }, [searchTerm, selectedCategory, businesses]);
 
   if (loading) return <p className="p-10 text-center text-red-800 font-bold">Cargando catálogo...</p>;
 
@@ -52,13 +77,33 @@ export default function CatalogPage() {
           )}
         </div>
 
-        {businesses.length === 0 ? (
+        <div className="flex flex-col md:flex-row gap-4 mb-8">
+          <input
+            type="text"
+            placeholder="Buscar por palabra clave..."
+            className="w-full p-3 border border-gray-300 rounded-lg"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <select
+            className="p-3 border border-gray-300 rounded-lg"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            <option value="all">Todas las categorías</option>
+            {categories.map((cat) => (
+              cat !== 'all' && <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+
+        {filteredBusinesses.length === 0 ? (
           <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed">
-            <p className="text-gray-500 italic text-lg">Aún no hay emprendimientos aprobados.</p>
+            <p className="text-gray-500 italic text-lg">No se encontraron emprendimientos con los filtros actuales.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {businesses.map((biz) => {
+            {filteredBusinesses.map((biz) => {
               const contacto = biz.contacto || "";
               
               // DETECCIÓN: ¿Es un link o un número?

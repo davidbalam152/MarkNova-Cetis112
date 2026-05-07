@@ -1,6 +1,7 @@
 
 "use client";
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { db } from '@/firebase/config';
 import { 
   collection, 
@@ -64,7 +65,10 @@ export default function AdminPanel() {
   if (role !== 'Admin') return <div className="p-10 text-center text-red-600 font-bold">Acceso Denegado.</div>;
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
+    <div className="max-w-5xl mx-auto p-6 relative">
+        <Link href="/" className="absolute top-6 right-6 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-md">
+            Ir a la Página Principal
+        </Link>
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Panel de Moderación</h1>
       
       {/* Pestañas de Navegación */}

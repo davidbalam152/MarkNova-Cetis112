@@ -12,6 +12,8 @@ const Header = () => {
   const handleLogout = async () => {
     try {
       await auth.signOut();
+      // Forzar la recarga de la página para limpiar el estado
+      window.location.href = '/'; 
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     }
@@ -24,13 +26,13 @@ const Header = () => {
           <Link href="/">MarkNova</Link>
         </div>
 
-        <div>
+        <nav className="flex items-center space-x-6">
           {!loading && (
             <>
               {user ? (
                 <div className="flex items-center space-x-4">
                   {/* Corregido: Usamos la variable 'role' directamente */}
-                  {role === 'admin' && (
+                  {role === 'Admin' && (
                     <Link href="/admin" className="font-semibold hover:text-red-200">
                       Admin
                     </Link>
@@ -49,7 +51,7 @@ const Header = () => {
               )}
             </>
           )}
-        </div>
+        </nav>
       </div>
     </header>
   );

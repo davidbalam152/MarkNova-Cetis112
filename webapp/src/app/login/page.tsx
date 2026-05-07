@@ -5,9 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup
+  signInWithEmailAndPassword
 } from 'firebase/auth';
 import { auth, db } from '@/firebase/config';
 import { doc, setDoc } from 'firebase/firestore';
@@ -46,25 +44,6 @@ const LoginPage = () => {
       setError(`Error: ${err.message}`);
     }
   };
-  
-  const handleGoogleSignIn = async () => {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ hd: 'cetis112.edu.mx' }); // Forzar dominio
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      // Si es la primera vez que inicia sesión, crea el documento en Firestore
-      await setDoc(doc(db, 'users', user.uid), {
-          uid: user.uid,
-          email: user.email,
-          role: 'Lector'
-      }, { merge: true }); // Merge para no sobreescribir si ya existe
-
-      router.push('/');
-    } catch (err: any) {
-      setError(`Error: ${err.message}`);
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -95,17 +74,6 @@ const LoginPage = () => {
               Registrarse
             </button>
         </div>
-
-        <div className="my-4 flex items-center">
-          <hr className="flex-grow border-t border-gray-300"/>
-          <span className="mx-4 text-gray-500">o</span>
-          <hr className="flex-grow border-t border-gray-300"/>
-        </div>
-
-        <button onClick={handleGoogleSignIn} className="w-full bg-white border border-gray-300 text-gray-700 p-2 rounded flex items-center justify-center hover:bg-gray-50">
-            <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google logo" className="h-6 w-auto mr-2" />
-            Continuar con Google
-        </button>
 
       </div>
     </div>
