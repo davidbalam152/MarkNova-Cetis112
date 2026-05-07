@@ -8,7 +8,7 @@ import { useUser } from '@/context/UserContext';
 import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
-  const { role, loading } = useUser();
+  const { user, role, loading } = useUser(); // Get the full user object
   const router = useRouter();
   
   // Estado para el formulario
@@ -36,6 +36,10 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) { // Make sure user is logged in
+      alert("Debes iniciar sesión para registrar un negocio.");
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -47,6 +51,7 @@ export default function RegisterPage() {
         contacto: formData.contact, // Aquí se guarda el link o el número
         status: 'pendiente',
         createdAt: new Date(),
+        ownerId: user.uid, // <<< AÑADIMOS EL ID DEL DUEÑO
       });
 
       alert("¡Solicitud enviada con éxito! Queda pendiente de aprobación.");

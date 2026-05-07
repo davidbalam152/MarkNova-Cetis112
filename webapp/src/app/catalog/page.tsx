@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { db } from '@/firebase/config';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore'; // Import deleteDoc
 import { useUser } from "@/context/UserContext"; 
 import Header from "@/components/Header";
+import { useRouter } from 'next/navigation'; // Import useRouter
 
 // Define a type for the business data to ensure type safety
 interface Business {
@@ -14,16 +15,18 @@ interface Business {
   descripcion: string;
   categoria: string;
   contacto: string;
+  ownerId: string; // Add ownerId to the interface
 }
 
 export default function CatalogPage() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
-  const { role } = useUser();
+  const { user, role } = useUser(); // Get user for permission checks
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const router = useRouter(); // Initialize router
 
   useEffect(() => {
     const q = query(
@@ -32,15 +35,13 @@ export default function CatalogPage() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      // Map Firestore documents to our Business type
       const docs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      })) as Business[]; // Cast to Business[] to inform TypeScript
+      })) as Business[];
       
       setBusinesses(docs);
       
-      // Extract unique categories from the typed documents
       const uniqueCategories = [...new Set(docs.map(doc => doc.categoria))].filter(Boolean);
       setCategories(['all', ...uniqueCategories]);
       
@@ -56,7 +57,7 @@ export default function CatalogPage() {
     if (searchTerm) {
       filtered = filtered.filter(biz =>
         biz.nombreNegocio.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        biz.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+        (biz.descripcion && biz.descripcion.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -66,6 +67,22 @@ export default function CatalogPage() {
 
     setFilteredBusinesses(filtered);
   }, [searchTerm, selectedCategory, businesses]);
+
+  const handleDelete = async (businessId: string) => {
+    if (confirm("¿Estás seguro de que quieres eliminar este negocio? Esta acción es permanente.")) {
+      try {
+        await deleteDoc(doc(db, "negocios", businessId));
+        alert("Negocio eliminado con éxito.");
+      } catch (error) {
+        console.error("Error al eliminar el negocio:", error);
+        alert("Hubo un error al eliminar el negocio.");
+      }
+    }
+  };
+
+  const handleEdit = (businessId: string) => {
+    router.push(`/edit/${businessId}`);
+  };
 
   if (loading) return <p className="p-10 text-center text-red-800 font-bold">Cargando catálogo...</p>;
 
@@ -117,11 +134,12 @@ export default function CatalogPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredBusinesses.map((biz) => {
               const contacto = biz.contacto || "";
-              
               const esLink = contacto.toLowerCase().startsWith('http');
-              
               const soloNumeros = contacto.replace(/\D/g, '');
               const numeroFinal = soloNumeros.length === 10 ? `52${soloNumeros}` : soloNumeros;
+              
+              // --- Lógica de permisos ---
+              const canManage = user && (user.uid === biz.ownerId || role === 'Admin');
 
               return (
                 <div key={biz.id} className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 flex flex-col hover:shadow-xl transition transform hover:-translate-y-1">
@@ -133,6 +151,24 @@ export default function CatalogPage() {
                   </div>
                   
                   <p className="text-gray-600 mb-6 flex-grow">{biz.descripcion}</p>
+
+                  {/* --- Controles de Admin/Dueño --*/}
+                  {canManage && (
+                    <div className="flex gap-2 mb-4 border-t pt-4">
+                      <button 
+                        onClick={() => handleEdit(biz.id)}
+                        className="flex-1 bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 text-sm font-semibold"
+                      >
+                        Editar
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(biz.id)}
+                        className="flex-1 bg-red-600 text-white p-2 rounded hover:bg-red-700 text-sm font-semibold"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  )}
                   
                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 text-center">
