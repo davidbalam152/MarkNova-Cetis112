@@ -3,30 +3,29 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { db } from '@/firebase/config';
-import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore'; // Import deleteDoc
+import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { useUser } from "@/context/UserContext"; 
 import Header from "@/components/Header";
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation';
 
-// Define a type for the business data to ensure type safety
 interface Business {
   id: string;
   nombreNegocio: string;
   descripcion: string;
   categoria: string;
   contacto: string;
-  ownerId: string; // Add ownerId to the interface
+  ownerId: string;
 }
 
 export default function CatalogPage() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user, role } = useUser(); // Get user for permission checks
+  const { user, role } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
 
   useEffect(() => {
     const q = query(
@@ -138,8 +137,8 @@ export default function CatalogPage() {
               const soloNumeros = contacto.replace(/\D/g, '');
               const numeroFinal = soloNumeros.length === 10 ? `52${soloNumeros}` : soloNumeros;
               
-              // --- Lógica de permisos ---
-              const canManage = user && (user.uid === biz.ownerId || role === 'Admin');
+              const isOwner = user && user.uid === biz.ownerId;
+              const isAdmin = role === 'Admin';
 
               return (
                 <div key={biz.id} className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 flex flex-col hover:shadow-xl transition transform hover:-translate-y-1">
@@ -152,21 +151,24 @@ export default function CatalogPage() {
                   
                   <p className="text-gray-600 mb-6 flex-grow">{biz.descripcion}</p>
 
-                  {/* --- Controles de Admin/Dueño --*/}
-                  {canManage && (
+                  {(isOwner || isAdmin) && (
                     <div className="flex gap-2 mb-4 border-t pt-4">
-                      <button 
-                        onClick={() => handleEdit(biz.id)}
-                        className="flex-1 bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 text-sm font-semibold"
-                      >
-                        Editar
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(biz.id)}
-                        className="flex-1 bg-red-600 text-white p-2 rounded hover:bg-red-700 text-sm font-semibold"
-                      >
-                        Eliminar
-                      </button>
+                      {isOwner && (
+                        <button 
+                          onClick={() => handleEdit(biz.id)}
+                          className="flex-1 bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 text-sm font-semibold"
+                        >
+                          Editar
+                        </button>
+                      )}
+                      {(isOwner || isAdmin) && (
+                        <button 
+                          onClick={() => handleDelete(biz.id)}
+                          className="flex-1 bg-red-600 text-white p-2 rounded hover:bg-red-700 text-sm font-semibold"
+                        >
+                          Eliminar
+                        </button>
+                      )}
                     </div>
                   )}
                   

@@ -1,13 +1,14 @@
+
 "use client";
 import { useState, useEffect } from 'react';
 import { db } from '@/firebase/config';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useUser } from '@/context/UserContext';
 import { useRouter, useParams } from 'next/navigation';
 import Header from '@/components/Header';
 
 export default function EditPage() {
-  const { user, role, loading } = useUser();
+  const { user, loading } = useUser(); // Role is no longer needed here
   const router = useRouter();
   const params = useParams();
   const businessId = params.id as string;
@@ -22,7 +23,7 @@ export default function EditPage() {
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   useEffect(() => {
-    if (!businessId) return;
+    if (!businessId || !user) return; // Wait for user to be loaded
 
     const fetchBusinessData = async () => {
       const docRef = doc(db, "negocios", businessId);
@@ -30,8 +31,8 @@ export default function EditPage() {
 
       if (docSnap.exists()) {
         const data = docSnap.data();
-        // Security check: only owner or admin can edit
-        if (user && (data.ownerId === user.uid || role === 'Admin')) {
+        // Security check: ONLY the owner can edit.
+        if (data.ownerId === user.uid) {
           setFormData({
             nombreNegocio: data.nombreNegocio,
             descripcion: data.descripcion,
@@ -39,6 +40,7 @@ export default function EditPage() {
             contacto: data.contacto
           });
         } else {
+          // If not the owner, redirect.
           alert("No tienes permiso para editar este negocio.");
           router.push('/catalog');
         }
@@ -49,11 +51,9 @@ export default function EditPage() {
       setIsLoadingData(false);
     };
 
-    if (user) { // Fetch data only when user context is loaded
-        fetchBusinessData();
-    }
+    fetchBusinessData();
 
-  }, [businessId, user, role, router]);
+  }, [businessId, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +73,19 @@ export default function EditPage() {
       alert("Hubo un error al actualizar la solicitud.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm("¿Estás seguro de que quieres eliminar este negocio permanentemente? Esta acción no se puede deshacer.")) {
+      try {
+        await deleteDoc(doc(db, "negocios", businessId));
+        alert("Negocio eliminado con éxito.");
+        router.push('/catalog');
+      } catch (error) {
+        console.error("Error al eliminar el negocio:", error);
+        alert("Hubo un error al eliminar el negocio.");
+      }
     }
   };
   
@@ -135,6 +148,13 @@ export default function EditPage() {
             className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition disabled:bg-gray-400"
           >
             {isSubmitting ? 'Guardando Cambios...' : 'Guardar y Enviar para Aprobación'}
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="w-full mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded transition"
+          >
+            Eliminar Negocio Permanentemente
           </button>
         </form>
       </div>
