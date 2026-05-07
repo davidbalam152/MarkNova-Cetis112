@@ -7,13 +7,22 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { useUser } from "@/context/UserContext"; 
 import Header from "@/components/Header";
 
+// Define a type for the business data to ensure type safety
+interface Business {
+  id: string;
+  nombreNegocio: string;
+  descripcion: string;
+  categoria: string;
+  contacto: string;
+}
+
 export default function CatalogPage() {
-  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const { role } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [filteredBusinesses, setFilteredBusinesses] = useState<any[]>([]);
+  const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
@@ -23,12 +32,15 @@ export default function CatalogPage() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      // Map Firestore documents to our Business type
       const docs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })) as Business[]; // Cast to Business[] to inform TypeScript
+      
       setBusinesses(docs);
       
+      // Extract unique categories from the typed documents
       const uniqueCategories = [...new Set(docs.map(doc => doc.categoria))].filter(Boolean);
       setCategories(['all', ...uniqueCategories]);
       
@@ -106,10 +118,8 @@ export default function CatalogPage() {
             {filteredBusinesses.map((biz) => {
               const contacto = biz.contacto || "";
               
-              // DETECCIÓN: ¿Es un link o un número?
               const esLink = contacto.toLowerCase().startsWith('http');
               
-              // Lógica de limpieza para WhatsApp (si no es link)
               const soloNumeros = contacto.replace(/\D/g, '');
               const numeroFinal = soloNumeros.length === 10 ? `52${soloNumeros}` : soloNumeros;
 
@@ -130,7 +140,6 @@ export default function CatalogPage() {
                     </p>
                     
                     {esLink ? (
-                      // BOTÓN PARA LINKS (Instagram, Facebook, Web)
                       <a 
                         href={contacto} 
                         target="_blank" 
@@ -140,7 +149,6 @@ export default function CatalogPage() {
                         🌐 Ver Perfil
                       </a>
                     ) : (
-                      // BOTÓN PARA WHATSAPP
                       <a 
                         href={`https://wa.me/${numeroFinal}`} 
                         target="_blank" 
