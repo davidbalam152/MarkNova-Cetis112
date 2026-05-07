@@ -139,6 +139,10 @@ export default function CatalogPage() {
               
               const isOwner = user && user.uid === biz.ownerId;
               const isAdmin = role === 'Admin';
+              const isEmprendedor = role === 'Emprendedor';
+
+              const canEdit = isOwner && isEmprendedor;
+              const canDelete = (isOwner && isEmprendedor) || isAdmin;
 
               return (
                 <div key={biz.id} className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 flex flex-col hover:shadow-xl transition transform hover:-translate-y-1">
@@ -151,9 +155,9 @@ export default function CatalogPage() {
                   
                   <p className="text-gray-600 mb-6 flex-grow">{biz.descripcion}</p>
 
-                  {(isOwner || isAdmin) && (
+                  {(canEdit || canDelete) && (
                     <div className="flex gap-2 mb-4 border-t pt-4">
-                      {isOwner && (
+                      {canEdit && (
                         <button 
                           onClick={() => handleEdit(biz.id)}
                           className="flex-1 bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 text-sm font-semibold"
@@ -161,7 +165,7 @@ export default function CatalogPage() {
                           Editar
                         </button>
                       )}
-                      {(isOwner || isAdmin) && (
+                      {canDelete && (
                         <button 
                           onClick={() => handleDelete(biz.id)}
                           className="flex-1 bg-red-600 text-white p-2 rounded hover:bg-red-700 text-sm font-semibold"

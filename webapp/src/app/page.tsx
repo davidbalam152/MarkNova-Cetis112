@@ -1,4 +1,3 @@
-
 "use client"; // REGLA 1: Necesario para usar hooks como useUser
 import Image from "next/image";
 import Link from 'next/link';

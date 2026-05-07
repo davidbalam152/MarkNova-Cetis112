@@ -8,7 +8,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Header from '@/components/Header';
 
 export default function EditPage() {
-  const { user, loading } = useUser(); // Role is no longer needed here
+  const { user, role, loading } = useUser(); // We need the role here
   const router = useRouter();
   const params = useParams();
   const businessId = params.id as string;
@@ -23,7 +23,7 @@ export default function EditPage() {
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   useEffect(() => {
-    if (!businessId || !user) return; // Wait for user to be loaded
+    if (!businessId || !user) return; // Wait for user and role to be loaded
 
     const fetchBusinessData = async () => {
       const docRef = doc(db, "negocios", businessId);
@@ -31,8 +31,8 @@ export default function EditPage() {
 
       if (docSnap.exists()) {
         const data = docSnap.data();
-        // Security check: ONLY the owner can edit.
-        if (data.ownerId === user.uid) {
+        // Security check: User must be the owner AND have the 'Emprendedor' role.
+        if (data.ownerId === user.uid && role === 'Emprendedor') {
           setFormData({
             nombreNegocio: data.nombreNegocio,
             descripcion: data.descripcion,
@@ -40,8 +40,8 @@ export default function EditPage() {
             contacto: data.contacto
           });
         } else {
-          // If not the owner, redirect.
-          alert("No tienes permiso para editar este negocio.");
+          // If not the owner or not an 'Emprendedor', redirect.
+          alert("No tienes permiso para editar este negocio. Solo los Emprendedores activos pueden editar.");
           router.push('/catalog');
         }
       } else {
@@ -53,7 +53,7 @@ export default function EditPage() {
 
     fetchBusinessData();
 
-  }, [businessId, user, router]);
+  }, [businessId, user, role, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

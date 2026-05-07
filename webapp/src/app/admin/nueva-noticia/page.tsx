@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { db } from '@/firebase/config';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useUser } from "@/context/UserContext"; // 1. Importar useUser
 
 export default function NuevaNoticiaPage() {
   const [title, setTitle] = useState('');
@@ -13,10 +14,17 @@ export default function NuevaNoticiaPage() {
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const { user } = useUser(); // 2. Obtener el usuario del contexto
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    if (!user) { // Pequeña guarda de seguridad
+      alert("No se pudo verificar tu identidad. Por favor, inicia sesión de nuevo.");
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       await addDoc(collection(db, 'news'), {
@@ -25,6 +33,7 @@ export default function NuevaNoticiaPage() {
         content,
         status: 'pendiente',
         createdAt: serverTimestamp(),
+        ownerId: user.uid, // 3. Añadir el ownerId al documento
       });
       router.push('/admin');
     } catch (error) {
