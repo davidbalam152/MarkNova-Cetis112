@@ -1,133 +1,120 @@
 
-"use client"; // Importante para usar hooks
+"use client";
 import { useState } from 'react';
-import Link from 'next/link';
 import { db } from '@/firebase/config';
-import { collection, addDoc } from 'firebase/firestore';
-import { useUser } from '@/context/UserContext'; 
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useUser } from '@/context/UserContext';
 import { useRouter } from 'next/navigation';
+import Header from '@/components/Header';
+import Link from 'next/link';
 
 export default function RegisterPage() {
-  const { user, role, loading } = useUser(); // Get the full user object
+  const { user, role, loading: userLoading } = useUser();
   const router = useRouter();
-  
-  // Estado para el formulario
+
   const [formData, setFormData] = useState({
-    businessName: '',
-    description: '',
-    category: 'Comida',
-    contact: ''
+    nombreNegocio: '',
+    descripcion: '',
+    categoria: 'Comida',
+    contacto: ''
   });
-
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Protección de ruta: Solo Emprendedor o Admin pueden entrar
-  if (loading) return <div className="p-10 text-center">Verificando permisos...</div>;
-  
-  if (role !== 'Emprendedor' && role !== 'Admin') {
-    return (
-      <div className="p-10 text-center">
-        <h1 className="text-2xl font-bold text-red-600">Acceso Restringido</h1>
-        <p>Solo los usuarios con rol de <strong>Emprendedor</strong> pueden registrar negocios.</p>
-        <Link href="/soporte" className="text-blue-600 underline mt-4 inline-block">Contacta a soporte para cambiar tu rol</Link>
-      </div>
-    );
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) { // Make sure user is logged in
-      alert("Debes iniciar sesión para registrar un negocio.");
-      return;
-    }
     setIsSubmitting(true);
 
+    if (!user) {
+      alert("Error: No se ha podido identificar al usuario.");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      // Guardamos en la colección "negocios" con status pendiente
       await addDoc(collection(db, "negocios"), {
-        nombreNegocio: formData.businessName,
-        descripcion: formData.description,
-        categoria: formData.category,
-        contacto: formData.contact, // Aquí se guarda el link o el número
+        ...formData,
+        ownerId: user.uid,
         status: 'pendiente',
-        createdAt: new Date(),
-        ownerId: user.uid, // <<< AÑADIMOS EL ID DEL DUEÑO
+        createdAt: serverTimestamp()
       });
 
-      alert("¡Solicitud enviada con éxito! Queda pendiente de aprobación.");
-      router.push('/catalog'); 
+      alert("¡Tu solicitud ha sido enviada! Un administrador la revisará pronto. Gracias por unirte.");
+      router.push('/catalog');
     } catch (error) {
-      console.error("Error al registrar:", error);
-      alert("Hubo un error al enviar la solicitud.");
+      console.error("Error al registrar el negocio:", error);
+      alert("Hubo un error al enviar tu solicitud. Por favor, inténtalo de nuevo.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  return (
-    <div style={{
-      fontFamily: "'Inter', 'Roboto', sans-serif",
-      backgroundColor: '#F4F6F8',
-      color: '#1F2937',
-      minHeight: '100vh',
-    }}>
-      <header style={{
-        padding: '16px 24px',
-        backgroundColor: '#991B1B',
-        color: 'white',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <Link href="/" passHref>
-          <h1 style={{ fontSize: '28px', fontWeight: '700', color: 'white', cursor: 'pointer' }}>MarkNova</h1>
+  if (userLoading) return (
+    <main className="p-10 text-center">
+      <p className="text-red-800 font-bold">Verificando sesión...</p>
+    </main>
+  );
+
+  if (!user) return (
+    <main>
+      <Header />
+      <div className="p-10 text-center max-w-md mx-auto">
+        <h1 className="text-2xl font-bold text-red-600">Acceso Restringido</h1>
+        <p className="mt-2 text-gray-700">Para proteger la información de nuestra comunidad, necesitas iniciar sesión para ver esta sección.</p>
+        <Link href="/" className="mt-6 inline-block bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition shadow-lg">
+          Ir a Iniciar Sesión
         </Link>
-      </header>
+      </div>
+    </main>
+  );
 
-      <main style={{ padding: '48px 24px', maxWidth: '768px', margin: '0 auto' }}>
-        <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#111827', marginBottom: '16px', textAlign: 'center' }}>
-          Registro de Emprendimientos
-        </h2>
-        <p style={{ fontSize: '16px', color: '#4B5563', textAlign: 'center', marginBottom: '32px' }}>
-          Tu solicitud quedará como "pendiente" hasta que el administrador la apruebe.
-        </p>
+  if (role !== 'Emprendedor' && role !== 'Admin') return (
+    <main>
+        <Header/>
+        <div className="p-10 text-center max-w-md mx-auto">
+            <h1 className="text-2xl font-bold text-yellow-600">Función no disponible para tu rol</h1>
+            <p className="mt-2 text-gray-700">Actualmente solo los usuarios con rol de 'Emprendedor' pueden registrar un negocio.</p>
+            <Link href="/catalog" className="mt-6 inline-block bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition shadow-lg">
+                Volver al Catálogo
+            </Link>
+        </div>
+    </main>
+  );
 
-        <form onSubmit={handleSubmit} style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-          padding: '32px',
-        }}>
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Nombre del negocio</label>
+  return (
+    <main>
+      <Header />
+      <div className="p-6 max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">Registra tu Emprendimiento</h1>
+        <p className="text-center text-gray-600 mb-8">Completa el formulario para que tu negocio aparezca en el catálogo después de la aprobación de un administrador.</p>
+        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-xl border-t-4 border-blue-500">
+          <div className="mb-5">
+            <label className="block font-bold text-gray-700 mb-2">Nombre del Negocio</label>
             <input 
               type="text" 
               required
-              value={formData.businessName}
-              onChange={(e) => setFormData({...formData, businessName: e.target.value})}
-              style={inputStyle}
+              value={formData.nombreNegocio}
+              onChange={(e) => setFormData({...formData, nombreNegocio: e.target.value})}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+              placeholder="Ej. Delicias de la Abuela"
             />
           </div>
-
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Descripción</label>
+          <div className="mb-5">
+            <label className="block font-bold text-gray-700 mb-2">Describe tu Producto o Servicio</label>
             <textarea 
               rows={4} 
               required
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              style={inputStyle}
+              value={formData.descripcion}
+              onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+              placeholder="Ofrecemos postres caseros hechos con recetas tradicionales..."
             ></textarea>
           </div>
-
-          <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Categoría</label>
+          <div className="mb-5">
+              <label className="block font-bold text-gray-700 mb-2">Categoría</label>
               <select 
-                value={formData.category}
-                onChange={(e) => setFormData({...formData, category: e.target.value})}
-                style={inputStyle}
+                value={formData.categoria}
+                onChange={(e) => setFormData({...formData, categoria: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"
               >
                 <option>Comida</option>
                 <option>Servicios</option>
@@ -136,60 +123,28 @@ export default function RegisterPage() {
                 <option>Otro</option>
               </select>
             </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Costo</label>
-              <input type="text" disabled placeholder="$10 MXN" style={{...inputStyle, backgroundColor: '#f1f1f1'}}/>
-            </div>
-          </div>
-
-          <div style={{ marginBottom: '32px' }}>
-            {/* CAMBIO AQUÍ: Etiqueta y Placeholder mejorados */}
-            <label style={{ display: 'block', fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Contacto (WhatsApp o Link de Redes Sociales)</label>
+          <div className="mb-6">
+            <label className="block font-bold text-gray-700 mb-2">Contacto (WhatsApp, Instagram, etc.)</label>
             <input 
               type="text" 
               required
-              value={formData.contact}
-              onChange={(e) => setFormData({...formData, contact: e.target.value})}
-              placeholder="Ej: 529991234567 o https://instagram.com/tu_negocio"
-              style={inputStyle}
+              value={formData.contacto}
+              onChange={(e) => setFormData({...formData, contacto: e.target.value})}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+              placeholder="https://wa.me/521234567890 o @mi_tienda"
             />
+            <p className="text-xs text-gray-500 mt-2">Asegúrate de que el link o usuario sea correcto para que puedan contactarte.</p>
           </div>
-
+          <p className="text-center text-sm text-gray-600 mb-6 bg-yellow-50 border border-yellow-200 p-3 rounded-lg">Al enviar, tu negocio quedará en estado "pendiente" y no será visible hasta que un administrador lo apruebe.</p>
           <button 
             type="submit" 
             disabled={isSubmitting}
-            style={{
-              width: '100%',
-              backgroundColor: isSubmitting ? '#9ca3af' : '#DC2626',
-              color: 'white',
-              borderRadius: '8px',
-              padding: '16px 24px',
-              fontWeight: '600',
-              border: 'none',
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
-            }}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded-xl transition shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed text-lg"
           >
-            {isSubmitting ? 'Enviando...' : 'Enviar Solicitud'}
+            {isSubmitting ? 'Enviando Solicitud...' : 'Enviar para Aprobación ($10)'}
           </button>
         </form>
-
-        <div style={{ marginTop: '48px', textAlign: 'center', padding: '24px', backgroundColor: '#FFFBEB', borderRadius: '12px', border: '1px solid #FEE2E2' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#B45309', marginBottom: '16px' }}>¿Necesitas ayuda?</h3>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-            <a href="https://wa.me/529992194923" target="_blank" style={{ backgroundColor: '#25D366', color: 'white', borderRadius: '8px', padding: '12px 24px', textDecoration: 'none' }}>WhatsApp Soporte</a>
-          </div>
-        </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
-
-const inputStyle = {
-  width: '100%',
-  backgroundColor: '#F9FAFB',
-  borderColor: '#E5E7EB',
-  borderWidth: '1px',
-  borderRadius: '4px',
-  padding: '16px',
-  color: '#1F2937'
-};

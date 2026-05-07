@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -17,12 +18,17 @@ import { useUser } from "@/context/UserContext";
 
 export default function NewsPage() {
   const [articles, setArticles] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user, role } = useUser(); // 1. Get user object for owner check
+  const [dataLoading, setDataLoading] = useState(true);
+  const { user, role, loading: userLoading } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredArticles, setFilteredArticles] = useState<any[]>([]);
 
   useEffect(() => {
+    if (userLoading || !user) {
+      setDataLoading(false);
+      return;
+    }
+
     const q = query(
       collection(db, "news"), 
       where("status", "==", "aprobado"),
@@ -31,11 +37,11 @@ export default function NewsPage() {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setArticles(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setLoading(false);
+      setDataLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user, userLoading]);
 
   useEffect(() => {
     const filtered = articles.filter(article =>
@@ -47,7 +53,6 @@ export default function NewsPage() {
 
   const handleEliminar = async (id: string) => {
     const confirmar = window.confirm("¿Estás seguro de que deseas eliminar esta noticia permanentemente?");
-    
     if (confirmar) {
       try {
         await deleteDoc(doc(db, "news", id));
@@ -58,9 +63,31 @@ export default function NewsPage() {
     }
   };
 
-  if (loading) return (
+  if (userLoading) return (
     <main className="p-10 text-center">
-      <p className="text-red-800 font-bold animate-pulse">Cargando noticias...</p>
+      <p className="text-red-800 font-bold">Verificando sesión...</p>
+    </main>
+  );
+
+  if (!user) return (
+    <main>
+      <Header />
+      <div className="p-10 text-center max-w-md mx-auto">
+        <h1 className="text-2xl font-bold text-red-600">Acceso Restringido</h1>
+        <p className="mt-2 text-gray-700">Para proteger la información de nuestra comunidad, necesitas iniciar sesión para ver esta sección.</p>
+        <Link href="/" className="mt-6 inline-block bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition shadow-lg">
+          Ir a Iniciar Sesión
+        </Link>
+      </div>
+    </main>
+  );
+  
+  if (dataLoading) return (
+    <main>
+      <Header />
+      <div className="p-10 text-center">
+          <p className="text-red-800 font-bold animate-pulse">Cargando noticias...</p>
+      </div>
     </main>
   );
 
@@ -70,7 +97,6 @@ export default function NewsPage() {
       <div className="p-6 max-w-5xl mx-auto">
         <div className="flex justify-between items-center mb-8 border-b-2 border-red-800 pb-4">
           <h1 className="text-3xl font-bold text-red-800">Noticias CETIS 112</h1>
-
           {role === 'Admin' && (
             <Link 
               href="/admin/nueva-noticia" 
@@ -80,7 +106,6 @@ export default function NewsPage() {
             </Link>
           )}
         </div>
-        
         <div className="mb-8">
           <input
             type="text"
@@ -90,7 +115,6 @@ export default function NewsPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-
         {filteredArticles.length === 0 ? (
           <p className="text-gray-500 italic text-center py-10">No hay noticias que coincidan con tu búsqueda.</p>
         ) : (
@@ -98,11 +122,8 @@ export default function NewsPage() {
             {filteredArticles.map((article) => {
               const isOwner = user && user.uid === article.ownerId;
               const isAdmin = role === 'Admin';
-
               return (
                 <div key={article.id} className="bg-white p-6 rounded-xl shadow-md border-l-4 border-red-600 relative">
-                  
-                  {/* Admin Controls - Top Right */}
                   {isAdmin && (
                     <div className="absolute top-4 right-4 flex items-center gap-2">
                       {isOwner && (
@@ -121,10 +142,8 @@ export default function NewsPage() {
                       </button>
                     </div>
                   )}
-
                   <h2 className="text-2xl font-bold text-gray-800 mb-2 pr-24">{article.title}</h2>
                   <p className="text-gray-700 whitespace-pre-wrap mb-4">{article.content}</p>
-                  
                   <div className="flex justify-between items-center mt-4 border-t pt-4">
                     <p className="text-xs text-gray-400 italic">
                       Publicado el: {article.createdAt?.toDate().toLocaleDateString()}

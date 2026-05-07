@@ -19,8 +19,8 @@ interface Business {
 
 export default function CatalogPage() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user, role } = useUser();
+  const [dataLoading, setDataLoading] = useState(true);
+  const { user, role, loading: userLoading } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
@@ -28,6 +28,11 @@ export default function CatalogPage() {
   const router = useRouter();
 
   useEffect(() => {
+    if (userLoading || !user) {
+      setDataLoading(false);
+      return;
+    }
+
     const q = query(
       collection(db, "negocios"), 
       where("status", "==", "aprobado")
@@ -44,11 +49,11 @@ export default function CatalogPage() {
       const uniqueCategories = [...new Set(docs.map(doc => doc.categoria))].filter(Boolean);
       setCategories(['all', ...uniqueCategories]);
       
-      setLoading(false);
+      setDataLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user, userLoading]);
 
   useEffect(() => {
     let filtered = businesses;
@@ -83,7 +88,31 @@ export default function CatalogPage() {
     router.push(`/edit/${businessId}`);
   };
 
-  if (loading) return <p className="p-10 text-center text-red-800 font-bold">Cargando catálogo...</p>;
+  if (userLoading) return (
+    <main className="p-10 text-center">
+      <p className="text-red-800 font-bold">Verificando sesión...</p>
+    </main>
+  );
+
+  if (!user) return (
+    <main>
+      <Header />
+      <div className="p-10 text-center max-w-md mx-auto">
+        <h1 className="text-2xl font-bold text-red-600">Acceso Restringido</h1>
+        <p className="mt-2 text-gray-700">Para proteger la información de nuestra comunidad, necesitas iniciar sesión para ver esta sección.</p>
+        <Link href="/" className="mt-6 inline-block bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition shadow-lg">
+          Ir a Iniciar Sesión
+        </Link>
+      </div>
+    </main>
+  );
+
+  if (dataLoading) return (
+    <main>
+      <Header />
+      <p className="p-10 text-center text-red-800 font-bold animate-pulse">Cargando catálogo...</p>
+    </main>
+  );
 
   return (
     <main>
